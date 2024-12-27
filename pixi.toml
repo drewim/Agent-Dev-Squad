@@ -1,0 +1,30 @@
+[project]
+name = "ai-dev-team"
+version = "0.1.0"
+description = "Add your project description here"
+authors = ["Your Name <your.email@example.com>"]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[dependencies]
+python = ">=3.12"
+redis = "*"
+requests = "*"
+pygit2 = "*"
+psutil = "*"
+torch = ">=2.2.*"
+
+[tasks]
+start = "python src/main.py"
+test = "pytest tests/"
+lint = "ruff check ."
+format = "ruff format ."
+
+
+[feature.dev.dependencies]
+pytest = "*"
+ruff = "*"
+isort = "*"
+mypy = "*"
+coverage = "*"
+

@@ -1,0 +1,38 @@
+ai-dev-team/
+├── .pixi/             # Pixi-related files
+│   └── pixi.lock      # pixi lock file
+├── pixi.toml         # Pixi project configuration
+├── src/              # Source code for the project
+│   ├── agents/       # Agent-specific code
+│   │   ├── __init__.py
+│   │   ├── agent.py      # Base Agent class
+│   │   ├── architect_agent.py
+│   │   ├── senior_dev_agent.py
+│   │   ├── junior_dev_agent.py
+│   │   ├── test_dev_agent.py
+|   |   └── project_manager_agent.py
+│   ├── core/         # Core components
+│   │   ├── __init__.py
+│   │   ├── task_queue.py    # Redis Task Queue
+│   │   ├── message_pipeline.py # HTTP Message Pipeline
+│   │   └── resource_manager.py # (To be implemented)
+│   ├── api/          # API related code, (gateway for external LLM calls)
+│   │   ├── __init__.py
+|   |   ├── ollama_client.py
+│   │   └── api_gateway.py # For handling external API calls
+│   ├── utils/         # Utility functions
+│   │   ├── __init__.py
+│   │   ├── logger.py # Custom logger creation/handling
+│   │   └── config.py # Project configuration handling
+│   └── main.py      # Main entry point for the application
+├── tests/            # Test code
+│    └── unit/
+│        ├── __init__.py
+│        ├── test_task_queue.py
+│        ├── test_message_pipeline.py
+│        └── test_agents.py # test the agents
+├── data/          # Data storage
+│   └── models/  # for storing models, model outputs etc
+├── docs/             # Project documentation
+│   └── ...
+└── README.md         # Project readme
