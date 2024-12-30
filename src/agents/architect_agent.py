@@ -3,6 +3,7 @@ import time
 import uuid
 from typing import Dict, Any
 from api.ollama_client import OllamaClient
+from api.response_schema import ArchitectResponse
 
 class ArchitectAgent(Agent):
     """
@@ -30,7 +31,6 @@ class ArchitectAgent(Agent):
                 self.process_task(largest_task) # pass the largest task to the processing function
             time.sleep(1) # Wait 1 second, not to overwhelm the system
 
-
     def process_task(self, task_details: Dict[str, Any]):
         """
         Example implementation to break up a large task using an LLM
@@ -47,15 +47,25 @@ class ArchitectAgent(Agent):
 
         self.logger.info(f"Breaking down task: {description}")
          # Placeholder: Replace with actual task breakdown logic (LLM call here)
-        prompt = f"Break down the following task: '{description}' into 2 subtasks. Provide each subtask description on its own line"
+        prompt = f"Break down the following task: '{description}' into small coding subtasks that can be completed by small AI coding models. Provide each subtask description on its own line and output a structured response."
         model_name = task_details.get('resource_requirements', {}).get('model', self.model) # Get model name from task, or use default
-        response = self.ollama_client.generate_text(model_name, prompt) # make ollama API call
+        response = self.ollama_client.generate_text(model_name, prompt, system_prompt=self.DEFAULT_SYSTEM_PROMPT, response_model=ArchitectResponse) # make ollama API call
         if not response:
             self.logger.error("Could not get response from Ollama")
             self.fail_task("Could not get response for task")
             return
-        
-        subtask_descriptions = response.split('\n') # Split into different subtasks
+
+        if not isinstance(response, ArchitectResponse):
+             self.logger.error(f"Could not parse response {response}")
+             self.fail_task(f"Could not parse response {response}")
+             return
+
+        if response.confidence < self.confidence_threshold:
+            self.logger.warning(f"Low confidence for task: {description} ({response.confidence}), requesting help.")
+            self.request_help(f"Low confidence from LLM {response.confidence}")
+            self.pause_task(f"Waiting for help for low confidence response")
+            return
+        subtask_descriptions = response.response.split('\n') # Split into different subtasks
         if len(subtask_descriptions) < 2:
             self.logger.error(f"Could not parse enough subtasks: {subtask_descriptions}")
             self.fail_task(f"Could not parse enough subtasks: {subtask_descriptions}")
@@ -67,7 +77,8 @@ class ArchitectAgent(Agent):
             priority= task_details.get('priority', 1),
              resource_requirements={
                  'model': self.model
-            }
+            },
+            # system_prompt = f"You are a subtask assistant and your job is to perform a subtask" # add system prompt for subtasks
         )
         subtask_2_id = self.create_task(
             description=subtask_descriptions[1],
@@ -75,7 +86,8 @@ class ArchitectAgent(Agent):
             priority= task_details.get('priority', 1),
              resource_requirements={
                  'model': self.model
-            }
+            },
+            # system_prompt = f"You are a subtask assistant and your job is to perform a subtask" # add system prompt for subtasks
         )
 
 
@@ -97,3 +109,4 @@ class ArchitectAgent(Agent):
             'is_active': self.is_active,
             'ollama_client': self.ollama_client.get_status()
         }
+ 

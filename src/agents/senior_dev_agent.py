@@ -2,22 +2,16 @@ from agent import Agent
 import time
 from typing import Dict, Any
 from api.ollama_client import OllamaClient
-
+from api.response_schema import SeniorDevResponse
 
 class SeniorDevAgent(Agent):
     """
     Agent responsible for reviewing code and providing feedback.
     """
-    DEFAULT_SYSTEM_PROMPT = "You are an expert software developer specialized in the review and optimization of code. After assessing \
-        and/or improving the code if needed, provide a confidence score from 0-1 that the code will accomplish its purpose."
-    
-    def __init__(self, name, model, message_pipeline, task_queue, logger=None, confidence_threshold = 0.8, system_prompt = None):
+    DEFAULT_SYSTEM_PROMPT = "You are a helpful code reviewer that is tasked with reviewing code for bugs, improvements, and optimization suggestions."
+    def __init__(self, name, model, message_pipeline, task_queue, logger=None, confidence_threshold = 0.8):
         super().__init__(name, model, message_pipeline, task_queue, logger=logger, confidence_threshold=confidence_threshold)
         self.ollama_client = OllamaClient(logger=self.logger)
-        if system_prompt:
-            self.system_prompt = system_prompt
-        else:
-            self.system_prompt = self.DEFAULT_SYSTEM_PROMPT
 
     def run(self):
         """
@@ -60,30 +54,38 @@ class SeniorDevAgent(Agent):
         self.logger.info(f"Reviewing code for task {task_details['task_id']}: {description[:30]}...") # Log the task id being worked on, with a shorter version of the description
         # Placeholder: Replace with actual code review logic (LLM call here)
         model_name = task_details.get('resource_requirements', {}).get('model', self.model) # Get model name from task, or use default
-        prompt = f"{self.system_prompt} Review the following code for '{description}'.  Respond with what to improve, optimize or if the code is good: {code}"
-        feedback = self.ollama_client.generate_text(model_name, prompt) # make ollama API call
-        if not feedback:
+        prompt = f"Review the following code for '{description}'.  Respond with what to improve, optimize or if the code is good, and output a structured response with a confidence level: {code}"
+        response = self.ollama_client.generate_text(model_name, prompt, system_prompt = self.DEFAULT_SYSTEM_PROMPT, response_model = SeniorDevResponse) # make ollama API call
+
+        if not response:
             self.logger.error("Could not get a response from the ollama API")
             self.fail_task("Could not get a response for code review")
             return
+
+        if not isinstance(response, SeniorDevResponse):
+             self.logger.error(f"Could not parse response {response}")
+             self.fail_task(f"Could not parse response {response}")
+             return
+
+        if response.confidence < self.confidence_threshold:
+            self.logger.warning(f"Low confidence for task: {description} ({response.confidence}), requesting help.")
+            self.request_help(f"Low confidence from LLM {response.confidence}")
+            self.pause_task(f"Waiting for help for low confidence response")
+            return
+
         # If good enough confidence
-        confidence = 0.9 # Set confidence for this agent
-        if confidence >= self.confidence_threshold:
-             # create a test task
-             self.logger.info("Confidence is high, creating test task")
-             test_task_id = self.create_task(
-                 description = f"Create unit tests for '{description[:30]}'",
-                 dependencies = [task_details['task_id']],
-                 priority = task_details.get('priority', 1),
-                 resource_requirements={
-                     'model': 'llama-2-13b'
-                 },
-                output = code # send along the code so the test dev agent can read this
-             )
-             self.complete_task({'feedback': feedback, 'test_task_id': test_task_id})
-        else:
-             self.request_help("Confidence is low, I think this needs more help")
-             self.pause_task("Waiting for help with code review.")
+        # create a test task
+        self.logger.info("Confidence is high, creating test task")
+        test_task_id = self.create_task(
+            description = f"Create unit tests for '{description[:30]}'",
+            dependencies = [task_details['task_id']],
+            priority = task_details.get('priority', 1),
+            resource_requirements={
+                'model': 'llama-2-13b'
+            },
+            output = code # send along the code so the test dev agent can read this
+        )
+        self.complete_task({'feedback': response.feedback, 'test_task_id': test_task_id})
 
 
     def get_status(self):

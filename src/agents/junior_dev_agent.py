@@ -2,20 +2,16 @@ from agent import Agent
 import time
 from typing import Dict, Any
 from api.ollama_client import OllamaClient
+from api.response_schema import JuniorDevResponse
 
 class JuniorDevAgent(Agent):
     """
     Agent responsible for code generation.
     """
-    DEFAULT_SYSTEM_PROMPT = "You are a python software developer responsible for successfully completing small coding subtasks.\
-        Complete your task to the best of your ability and provide a confidence level from 0-1 that your response will accomplish the task."
-    def __init__(self, name, model, message_pipeline, task_queue, logger=None, confidence_threshold=0.6, system_prompt=None):
+    DEFAULT_SYSTEM_PROMPT = "You are a helpful code assistant specialized in generating python code."
+    def __init__(self, name, model, message_pipeline, task_queue, logger=None, confidence_threshold=0.6):
         super().__init__(name, model, message_pipeline, task_queue, logger=logger, confidence_threshold=confidence_threshold)
         self.ollama_client = OllamaClient(logger=self.logger) # create a new instance of ollama client
-        if system_prompt:
-            self.system_prompt = system_prompt
-        else:
-            self.system_prompt = self.DEFAULT_SYSTEM_PROMPT
 
     def run(self):
         """
@@ -49,23 +45,27 @@ class JuniorDevAgent(Agent):
         description = task_details['description']
         self.logger.info(f"Generating code for: {description[:30]}...") # log a short version of the description
         # Placeholder: Replace with actual code generation logic (LLM call here)
-        prompt = f"Generate python code to '{description}'. Respond with code only and make sure it is surrounded in triple backticks." # a simple prompt for now
+        prompt = f"Generate python code to '{description}'. Respond with code only and make sure it is surrounded in triple backticks, and output a json schema with a confidence level and the code." # a simple prompt for now
         model_name = task_details.get('resource_requirements', {}).get('model', self.model) # Get model name from task, or use default
-        code = self.ollama_client.generate_text(model_name, prompt) # make ollama API call
+        response = self.ollama_client.generate_text(model_name, prompt, system_prompt = self.DEFAULT_SYSTEM_PROMPT, response_model = JuniorDevResponse) # make ollama API call
 
-        if not code:
+        if not response:
              self.logger.error("Could not get a response from the ollama API")
              self.fail_task("Could not generate code")
              return
         
-        confidence = 0.7 # Set confidence for this agent, in a real situation this would come from the model (can be determined by parsing the response as well)
-        if confidence >= self.confidence_threshold:
-            self.complete_task({'code': code}) # if confident, then pass on the code
-        else:
-             self.request_help("Confidence is low, I think this code needs help")
-             self.pause_task("Waiting for help generating code")
+        if not isinstance(response, JuniorDevResponse):
+             self.logger.error(f"Could not parse response {response}")
+             self.fail_task(f"Could not parse response {response}")
+             return
 
+        if response.confidence < self.confidence_threshold:
+            self.logger.warning(f"Low confidence for task: {description} ({response.confidence}), requesting help.")
+            self.request_help(f"Low confidence from LLM {response.confidence}")
+            self.pause_task(f"Waiting for help for low confidence response")
+            return
 
+        self.complete_task({'code': response.response}) # if confident, then pass on the code
 
     def get_status(self):
         """

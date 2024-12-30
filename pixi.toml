@@ -1,30 +1,40 @@
 [project]
 name = "ai-dev-team"
 version = "0.1.0"
-description = "Add your project description here"
-authors = ["Your Name <your.email@example.com>"]
-channels = ["conda-forge"]
+description = "AI agent team for developing software projects"
+channels = ["conda-forge", "pytorch"]
 platforms = ["osx-arm64"]
+readme = "README.md"
 
 [dependencies]
-python = ">=3.12"
-redis = "*"
+python = ">=3.12,<3.13"
 requests = "*"
 pygit2 = "*"
 psutil = "*"
-torch = ">=2.2.*"
+pydantic = "*"
+pytorch = "*"
+torchvision = "*"
 
-[tasks]
-start = "python src/main.py"
-test = "pytest tests/"
-lint = "ruff check ."
-format = "ruff format ."
+[tool.pixi.pypi-dependencies]
+redis = "*"
 
+[environments]
+default = { solve-group = "default" }
+test = {features =["test"], solve-group = "default" }
+dev = {features=["dev"], solve-group = "default"}
+prod = {features=["dev", "test"], solve-group = "default"}
+
+[feature.test.dependencies]
+pytest = "*"
+coverage = "*"
 
 [feature.dev.dependencies]
-pytest = "*"
 ruff = "*"
 isort = "*"
 mypy = "*"
-coverage = "*"
 
+[feature.test.tasks]
+test = "pytest"
+
+[tasks]
+start = "python src/main.py"

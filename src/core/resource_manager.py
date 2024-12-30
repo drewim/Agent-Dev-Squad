@@ -47,7 +47,7 @@ class ResourceManager:
         """
         Get the total GPU memory (VRAM), will return none if there is no vram to monitor
         """
-        if torch.cuda.is_available():
+        if torch.backends.mps.is_available():
              try:
                 total_vram = torch.cuda.get_device_properties(0).total_memory
                 return total_vram / (1024 ** 3)

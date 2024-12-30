@@ -2,22 +2,17 @@ from agent import Agent
 import time
 from typing import Dict, Any
 from api.ollama_client import OllamaClient
+from api.response_schemas import TestDevResponse
 
 
 class TestDevAgent(Agent):
     """
     Agent responsible for creating unit tests.
     """
-    DEFAULT_SYSTEM_PROMPT = "You are a highly experienced software developer with expertise in developing unit and system tests for python code.\
-        Provide a confidence score from 0-1 that the code will accomplish its purpose."
-    
-    def __init__(self, name, model, message_pipeline, task_queue, logger=None, confidence_threshold=0.7, system_prompt = None):
+    DEFAULT_SYSTEM_PROMPT = "You are a helpful test generator that is tasked with creating unit tests for python code."
+    def __init__(self, name, model, message_pipeline, task_queue, logger=None, confidence_threshold=0.7):
         super().__init__(name, model, message_pipeline, task_queue, logger=logger, confidence_threshold=confidence_threshold)
         self.ollama_client = OllamaClient(logger=self.logger)
-        if system_prompt:
-            self.system_prompt = system_prompt
-        else:
-            self.system_prompt = self.DEFAULT_SYSTEM_PROMPT
 
     def run(self):
         """
@@ -56,22 +51,27 @@ class TestDevAgent(Agent):
         description = task_details['description']
         self.logger.info(f"Generating test for {description[:30]}...")  # Log the task id being worked on, with a shorter version of the description
          # Placeholder: Replace with actual test generation logic (LLM call here)
-        prompt = f"{self.system_prompt} Create python unit test using pytest for '{description}'. Make sure the tests can be run with pytest, and return the tests within triple backticks: {code}"
+        prompt = f"Create python unit tests for '{description}'. Make sure the tests can be run with pytest, and return the tests within triple backticks, and output a json schema with the tests and a confidence level: {code}"
         model_name = task_details.get('resource_requirements', {}).get('model', self.model) # Get model name from task, or use default
-        test_code = self.ollama_client.generate_text(model_name, prompt) # make ollama API call
-
-        if not test_code:
+        response = self.ollama_client.generate_text(model_name, prompt, system_prompt=self.DEFAULT_SYSTEM_PROMPT, response_model=TestDevResponse) # make ollama API call
+        if not response:
             self.logger.error("Could not get a response from the ollama API")
             self.fail_task("Could not generate tests")
             return
-        confidence = 0.8 # Set confidence for this agent, in a real situation this would come from the model
 
-        if confidence >= self.confidence_threshold:
-            self.complete_task({'tests': test_code}) # if confident, then pass on the tests
-        else:
-            self.request_help("Confidence is low, I think these tests need help")
-            self.pause_task("Waiting for help with tests")
+        if not isinstance(response, TestDevResponse):
+             self.logger.error(f"Could not parse response {response}")
+             self.fail_task(f"Could not parse response {response}")
+             return
 
+        if response.confidence < self.confidence_threshold:
+            self.logger.warning(f"Low confidence for task: {description} ({response.confidence}), requesting help.")
+            self.request_help(f"Low confidence from LLM {response.confidence}")
+            self.pause_task(f"Waiting for help for low confidence response")
+            return
+
+
+        self.complete_task({'tests': response.tests}) # if confident, then pass on the tests
 
     def get_status(self):
         """
