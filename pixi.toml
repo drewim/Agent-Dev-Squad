@@ -15,7 +15,7 @@ pydantic = "*"
 pytorch = "*"
 torchvision = "*"
 
-[tool.pixi.pypi-dependencies]
+[pypi-dependencies]
 redis = "*"
 
 [environments]

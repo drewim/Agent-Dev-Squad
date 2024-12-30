@@ -2,7 +2,7 @@ import psutil
 import torch
 import logging
 from typing import Dict, Any
-from utils.config import get_config_value
+from src.utils.config import get_config_value
 
 class ResourceManager:
     """
@@ -49,6 +49,8 @@ class ResourceManager:
         """
         if torch.backends.mps.is_available():
              try:
+                # TODO: Update cuda call to mps
+                mps_device = torch.device("mps")
                 total_vram = torch.cuda.get_device_properties(0).total_memory
                 return total_vram / (1024 ** 3)
              except Exception as e:

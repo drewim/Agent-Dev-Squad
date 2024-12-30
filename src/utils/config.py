@@ -11,7 +11,7 @@ def load_config(config_file="config.json") -> Dict[str, Any]:
              config = json.load(f)
          return config
      except (FileNotFoundError, json.JSONDecodeError) as e:
-         print("Error: could not load config, returning blank config")
+         print(f"Error {e}: could not load config, returning blank config")
          return {}
 
 def get_config_value(config: Dict[str, Any], key: str, default: Any = None) -> Any:
@@ -19,13 +19,3 @@ def get_config_value(config: Dict[str, Any], key: str, default: Any = None) -> A
     Gets the value associated with a specific key in a config dict, returns the default value if not found.
     """
     return config.get(key, default)
-
-# Example config.json
-# {
-#     "redis_host": "localhost",
-#     "redis_port": 6379,
-#     "message_pipeline_host": "localhost",
-#     "message_pipeline_port": 8000,
-#      "log_level": "DEBUG",
-#      "api_limit": 10
-# }

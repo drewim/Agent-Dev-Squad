@@ -1,0 +1,47 @@
+ai-dev-team
+├── project_tree.txt
+├── pixi.toml
+├── LICENSE
+├── pixi.lock
+├── README.md
+├── setup.py
+├── .gitignore
+└── .gitattributes
+├── tests
+    └── test_mac_resource_monitor.py
+    └── unit
+└── docs
+    ├── architecture.md
+    ├── overview.md
+    ├── project_tree.txt
+    ├── workflow.md
+    └── project_structure.txt
+├── data
+    └── models
+├── src
+    ├── __init__.py
+    └── main.py
+    └── core
+        ├── task_queue.py
+        ├── resource_manager.py
+        ├── __init__.py
+        ├── mac_resource_manager.py
+        └── message_pipeline.py
+    └── agents
+        ├── architect_agent.py
+        ├── test_dev_agent.py
+        ├── __init__.py
+        ├── junior_dev_agent.py
+        ├── agent.py
+        ├── senior_dev_agent.py
+        └── project_manager_agent.py
+    └── utils
+        ├── config.py
+        ├── config.json
+        ├── __init__.py
+        └── logger.py
+    └── api
+        ├── api_gateway.py
+        ├── ollama_client.py
+        ├── __init__.py
+        └── response_schema.py

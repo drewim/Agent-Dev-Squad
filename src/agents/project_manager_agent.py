@@ -1,7 +1,7 @@
-from agent import Agent
+from src.agents.agent import Agent
 import time
 from typing import Dict, Any
-import logging
+# import src.utils.logging
 
 
 class ProjectManagerAgent(Agent):

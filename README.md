@@ -4,6 +4,9 @@
 ## Developed by:
 Drew Imhof <drew.c.imhof@gmail.com>
 
+## License
+GNU GENERAL PUBLIC LICENSE v3
+
 ## Project Description
 A team of AI agents to help develop software projects. There is currently an agent to organize the project and break down tasks, the architect, an agent to report on tasks and statuses, the project manager, and software developer agents, including a senior dev, junior devs, and a test dev. These agents can use different models depending on resources available.
 

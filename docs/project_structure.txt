@@ -15,7 +15,8 @@ ai-dev-team/
 │   │   ├── __init__.py
 │   │   ├── task_queue.py    # Redis Task Queue
 │   │   ├── message_pipeline.py # HTTP Message Pipeline
-│   │   └── resource_manager.py # (To be implemented)
+|       
+│   │   └── resource_manager.py #
 │   ├── api/          # API related code, (gateway for external LLM calls)
 │   │   ├── __init__.py
 |   |   ├── ollama_client.py

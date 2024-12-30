@@ -1,7 +1,7 @@
 import logging
 import sys
 from typing import Dict, Any
-from config import get_config_value
+from src.utils.config import get_config_value
 
 def get_project_logger(config: Dict[str, Any], name: str = 'project', log_level: int = logging.INFO) -> logging.Logger:
     """

@@ -1,9 +1,9 @@
-from agent import Agent
+from src.agents.agent import Agent
 import time
-import uuid
+# import uuid
 from typing import Dict, Any
-from api.ollama_client import OllamaClient
-from api.response_schema import ArchitectResponse
+from src.api.ollama_client import OllamaClient
+from src.api.response_schema import ArchitectResponse
 
 class ArchitectAgent(Agent):
     """
@@ -63,7 +63,7 @@ class ArchitectAgent(Agent):
         if response.confidence < self.confidence_threshold:
             self.logger.warning(f"Low confidence for task: {description} ({response.confidence}), requesting help.")
             self.request_help(f"Low confidence from LLM {response.confidence}")
-            self.pause_task(f"Waiting for help for low confidence response")
+            self.pause_task(f"Waiting for help for low confidence response {response.confidence}")
             return
         subtask_descriptions = response.response.split('\n') # Split into different subtasks
         if len(subtask_descriptions) < 2:

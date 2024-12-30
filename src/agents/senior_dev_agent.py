@@ -1,8 +1,8 @@
-from agent import Agent
+from src.agents.agent import Agent
 import time
 from typing import Dict, Any
-from api.ollama_client import OllamaClient
-from api.response_schema import SeniorDevResponse
+from src.api.ollama_client import OllamaClient
+from src.api.response_schema import SeniorDevResponse
 
 class SeniorDevAgent(Agent):
     """
